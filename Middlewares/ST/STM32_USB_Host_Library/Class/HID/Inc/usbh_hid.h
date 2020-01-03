@@ -222,9 +222,21 @@ typedef struct _HID_Process
   uint8_t              DataReady;
   HID_DescTypeDef      HID_Desc;
   uint8_t			   interface;
-  USBH_StatusTypeDef  ( * Init)(USBH_HandleTypeDef *phost);
+  USBH_StatusTypeDef  ( * Init)(USBH_HandleTypeDef *phost, uint8_t interface);
 }
 HID_HandleTypeDef;
+
+#define HID_MAX_COMPOSITED_INTERFACES 2
+
+typedef struct _HIDComposite_Process
+{
+	uint8_t num_interfaces;
+	HID_HandleTypeDef *HID_Handles[HID_MAX_COMPOSITED_INTERFACES];
+}
+HID_Composite_TypeDef;
+
+
+
 
 /**
   * @}

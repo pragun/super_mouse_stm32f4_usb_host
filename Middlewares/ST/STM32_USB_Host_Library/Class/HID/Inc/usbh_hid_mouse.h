@@ -86,7 +86,7 @@ HID_MOUSE_Info_TypeDef;
 /** @defgroup USBH_HID_MOUSE_Exported_FunctionsPrototype
   * @{
   */
-USBH_StatusTypeDef USBH_HID_MouseInit(USBH_HandleTypeDef *phost);
+USBH_StatusTypeDef USBH_HID_MouseInit(USBH_HandleTypeDef *phost, uint8_t interface);
 HID_MOUSE_Info_TypeDef *USBH_HID_GetMouseInfo(USBH_HandleTypeDef *phost);
 
 /**

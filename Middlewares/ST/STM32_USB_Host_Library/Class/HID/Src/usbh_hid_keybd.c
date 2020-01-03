@@ -310,10 +310,14 @@ static  const  uint8_t  HID_KEYBRD_Codes[] = {
   * @param  phost: Host handle
   * @retval USBH Status
   */
-USBH_StatusTypeDef USBH_HID_KeybdInit(USBH_HandleTypeDef *phost)
+USBH_StatusTypeDef USBH_HID_KeybdInit(USBH_HandleTypeDef *phost, uint8_t interface)
 {
   uint32_t x;
-  HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
+  //HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
+
+  HID_Composite_TypeDef* HID_Composite = (HID_Composite_TypeDef*) phost->pActiveClass->pData;
+  HID_HandleTypeDef	**HID_Handles =  HID_Composite->HID_Handles;
+  HID_HandleTypeDef *HID_Handle =  HID_Handles[interface];
 
   keybd_info.lctrl=keybd_info.lshift = 0U;
   keybd_info.lalt=keybd_info.lgui = 0U;

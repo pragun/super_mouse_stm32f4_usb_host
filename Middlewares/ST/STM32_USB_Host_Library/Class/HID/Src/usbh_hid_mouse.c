@@ -172,9 +172,12 @@ static const HID_Report_ItemTypedef prop_y={
   * @param  phost: Host handle
   * @retval USBH Status
   */
-USBH_StatusTypeDef USBH_HID_MouseInit(USBH_HandleTypeDef *phost)
+USBH_StatusTypeDef USBH_HID_MouseInit(USBH_HandleTypeDef *phost, uint8_t interface)
 {
-  HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
+
+  HID_Composite_TypeDef* HID_Composite = (HID_Composite_TypeDef*) phost->pActiveClass->pData;
+  HID_HandleTypeDef	**HID_Handles =  HID_Composite->HID_Handles;
+  HID_HandleTypeDef *HID_Handle =  HID_Handles[interface];
 
   mouse_info.x = 0U;
   mouse_info.y = 0U;

@@ -104,9 +104,9 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost);
 static USBH_StatusTypeDef USBH_HID_SOFProcess(USBH_HandleTypeDef *phost);
 static void  USBH_HID_ParseHIDDesc (HID_DescTypeDef *desc, uint8_t *buf);
 
-static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost, uint8_t hid_handle_count, uint8_t protocol);
-extern USBH_StatusTypeDef USBH_HID_MouseInit(USBH_HandleTypeDef *phost);
-extern USBH_StatusTypeDef USBH_HID_KeybdInit(USBH_HandleTypeDef *phost);
+static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost, uint8_t protocol);
+extern USBH_StatusTypeDef USBH_HID_MouseInit(USBH_HandleTypeDef *phost, uint8_t interface);
+extern USBH_StatusTypeDef USBH_HID_KeybdInit(USBH_HandleTypeDef *phost, uint8_t interface);
 
 USBH_ClassTypeDef  HID_Class =
 {
@@ -120,11 +120,9 @@ USBH_ClassTypeDef  HID_Class =
   NULL,
 };
 
+
 #define HID_MAX_HANDLES 2
-HID_HandleTypeDef HID_Handles[HID_MAX_HANDLES];
-HID_HandleTypeDef* HID_Handle_Mouse;
-HID_HandleTypeDef* HID_Handle_Keyboard;
-uint8_t test_usb_buff[32];
+uint8_t test_usb_buff[64];
 /**
 * @}
 */
@@ -150,10 +148,14 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit (USBH_HandleTypeDef *phost)
   uint8_t protocol_list[] = {HID_MOUSE_BOOT_CODE,HID_KEYBRD_BOOT_CODE};
   uint8_t i = 0U;
   USBH_StatusTypeDef statuses[] = {USBH_FAIL,USBH_FAIL};
-  USBH_StatusTypeDef status = USBH_FAIL;;
+  USBH_StatusTypeDef status = USBH_FAIL;
 
-  for ( ;i < HID_MAX_HANDLES; i++){
-	  statuses[i] = USBH_HID_InterfaceInitHelper(phost, i, protocol_list[i]);
+  phost->pActiveClass->pData = (HID_HandleTypeDef *)USBH_malloc (sizeof(HID_Composite_TypeDef));
+  HID_Composite_TypeDef* HID_Composite = (HID_Composite_TypeDef*) phost->pActiveClass->pData;
+  HID_Composite->num_interfaces = 0;
+
+  for ( ;i < HID_MAX_COMPOSITED_INTERFACES; i++){
+	  statuses[i] = USBH_HID_InterfaceInitHelper(phost, protocol_list[i]);
   }
 
   if((statuses[0] == USBH_OK) && (statuses[1] == USBH_OK)){
@@ -162,13 +164,14 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInit (USBH_HandleTypeDef *phost)
   return status;
 }
 
-static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost, uint8_t hid_handle_count, uint8_t protocol){
+static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost, uint8_t protocol){
 
 	uint8_t max_ep;
 	uint8_t num = 0U;
 	HID_HandleTypeDef* HID_Handle;
 	uint8_t interface;
-  USBH_StatusTypeDef status = USBH_FAIL;
+	HID_Composite_TypeDef* HID_Composite = (HID_Composite_TypeDef*) phost->pActiveClass->pData;
+	USBH_StatusTypeDef status = USBH_FAIL;
 
   interface = USBH_FindInterface(phost, phost->pActiveClass->ClassCode, HID_BOOT_CODE, protocol);
 
@@ -180,9 +183,12 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost
   else
   {
     USBH_SelectInterface (phost, interface);
+    HID_Composite->HID_Handles[HID_Composite->num_interfaces] = (HID_HandleTypeDef *)USBH_malloc (sizeof(HID_HandleTypeDef));
+    HID_Handle = HID_Composite->HID_Handles[HID_Composite->num_interfaces];
+    HID_Composite->num_interfaces++;
     //phost->pActiveClass->pData = (HID_HandleTypeDef *)USBH_malloc (2*sizeof(HID_HandleTypeDef));
     //HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
-    HID_Handle = &HID_Handles[hid_handle_count];
+    //HID_Handle = &HID_Handles[hid_handle_count];
 
     HID_Handle->state = HID_ERROR;
     HID_Handle->interface = interface;
@@ -193,14 +199,12 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost
       USBH_UsrLog ("KeyBoard device found!");
       HAL_Delay(50);
       HID_Handle->Init =  USBH_HID_KeybdInit;
-      HID_Handle_Keyboard = HID_Handle;
     }
     else if(phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bInterfaceProtocol  == HID_MOUSE_BOOT_CODE)
     {
       USBH_UsrLog ("Mouse device found!");
       HAL_Delay(50);
       HID_Handle->Init =  USBH_HID_MouseInit;
-      HID_Handle_Mouse = HID_Handle;
     }
     else
     {
@@ -283,6 +287,7 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost
 USBH_StatusTypeDef static USBH_HID_InterfaceDeInit (USBH_HandleTypeDef *phost)
 {
   HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
+  HID_Composite_TypeDef* HID_Composite = (HID_Composite_TypeDef*) phost->pActiveClass->pData;
 
   if(HID_Handle->InPipe != 0x00U)
   {
@@ -319,8 +324,12 @@ static USBH_StatusTypeDef USBH_HID_ClassRequest(USBH_HandleTypeDef *phost)
 
   USBH_StatusTypeDef status         = USBH_BUSY;
   USBH_StatusTypeDef classReqStatus = USBH_BUSY;
-  HID_HandleTypeDef *HID_Handle =  &HID_Handles[0];
-  HID_HandleTypeDef *HID_Handle2 = &HID_Handles[1];
+  HID_Composite_TypeDef* HID_Composite = (HID_Composite_TypeDef*) phost->pActiveClass->pData;
+  uint8_t num_interfaces = HID_Composite->num_interfaces;
+  HID_HandleTypeDef	**HID_Handles =  HID_Composite->HID_Handles;
+
+  HID_HandleTypeDef *HID_Handle =  HID_Handles[0];
+  HID_HandleTypeDef *HID_Handle2 = HID_Handles[1];
 
   if((HID_Handle->ctl_state == HID_REQ_INIT) || (HID_Handle->ctl_state == HID_REQ_GET_HID_DESC)){
 	  if (USBH_HID_GetHIDDescriptor (phost, USB_HID_DESC_SIZE)== USBH_OK)
@@ -420,17 +429,23 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
   USBH_StatusTypeDef status = USBH_OK;
   USBH_StatusTypeDef status1 = USBH_OK;
   USBH_URBStateTypeDef status2 = URB_IDLE;
-  HID_HandleTypeDef *HID_Handle = &HID_Handles[0];
-  HID_HandleTypeDef *HID_Handle2 = &HID_Handles[1];
+
+  HID_Composite_TypeDef* HID_Composite = (HID_Composite_TypeDef*) phost->pActiveClass->pData;
+  uint8_t num_interfaces = HID_Composite->num_interfaces;
+  HID_HandleTypeDef	**HID_Handles =  HID_Composite->HID_Handles;
+
+  HID_HandleTypeDef *HID_Handle =  HID_Handles[0];
+  HID_HandleTypeDef *HID_Handle2 = HID_Handles[1];
+
 
   if (HID_Handle->state == HID_INIT){
-	  HID_Handle->Init(phost);
+	  HID_Handle->Init(phost,0);
 	  HID_Handle->state = HID_IDLE;
 	  return USBH_OK;
   }
 
   if (HID_Handle2->state == HID_INIT){
-	  HID_Handle2->Init(phost);
+	  HID_Handle2->Init(phost,1);
 	  HID_Handle2->state = HID_IDLE;
 	  return USBH_OK;
   }
@@ -593,8 +608,12 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
 static USBH_StatusTypeDef USBH_HID_SOFProcess(USBH_HandleTypeDef *phost)
 {
   //HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
-	HID_HandleTypeDef *HID_Handle = &HID_Handles[0];
-	HID_HandleTypeDef *HID_Handle2 = &HID_Handles[1];
+	HID_Composite_TypeDef* HID_Composite = (HID_Composite_TypeDef*) phost->pActiveClass->pData;
+	  uint8_t num_interfaces = HID_Composite->num_interfaces;
+	  HID_HandleTypeDef	**HID_Handles =  HID_Composite->HID_Handles;
+
+	  HID_HandleTypeDef *HID_Handle =  HID_Handles[0];
+	  HID_HandleTypeDef *HID_Handle2 = HID_Handles[1];
 
   if(HID_Handle->state == HID_POLL)
   {
