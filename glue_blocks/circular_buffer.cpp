@@ -213,4 +213,4 @@ void CircularBuffer<max>::send_complete(){
 	s = q;
 }
 
-template class CircularBuffer<40>;
+template class CircularBuffer<512>;

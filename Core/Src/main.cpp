@@ -93,19 +93,17 @@ int tim10_count = 0;
 int uart_tx_count = 0;
 int usb_event_num = 0;
 
-#define UART_TX_BUF_SIZE 40
-char uart_tx_buf[UART_TX_BUF_SIZE];
-int uart_tx_bytes = 0;
+#define UART_TX_BUF_SIZE 512
 
 int tx_count = 0;
 char* tx_buf = 0;
+
 
 CircularBuffer<UART_TX_BUF_SIZE> uart_tx_buffer;
 
 void timer11_period_elapsed(TIM_HandleTypeDef *htim){
 	timer_count ++;
-	printf("Hello World! %d\r\n",timer_count);
-	printf("Haa haa heehee...\n");
+	printf("Keeping alive.. %d\r\n",timer_count);
 
 }
 
@@ -382,7 +380,7 @@ static void MX_TIM10_Init(void)
   htim10.Instance = TIM10;
   htim10.Init.Prescaler = 8400;
   htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim10.Init.Period = 10;
+  htim10.Init.Period = 1;
   htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim10.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim10) != HAL_OK)
@@ -413,7 +411,7 @@ static void MX_TIM11_Init(void)
   htim11.Instance = TIM11;
   htim11.Init.Prescaler = 8400;
   htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim11.Init.Period = 10000;
+  htim11.Init.Period = 50000;
   htim11.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim11) != HAL_OK)
