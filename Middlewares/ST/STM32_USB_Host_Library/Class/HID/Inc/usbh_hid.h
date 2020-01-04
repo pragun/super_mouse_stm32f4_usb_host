@@ -106,8 +106,8 @@ typedef enum
   HID_IDLE,
   HID_SEND_DATA,
   HID_BUSY,
-  HID_GET_DATA,
   HID_SYNC,
+  HID_GET_DATA,
   HID_POLL,
   HID_ERROR,
 }
@@ -116,12 +116,12 @@ HID_StateTypeDef;
 typedef enum
 {
   HID_REQ_INIT = 0,
-  HID_REQ_IDLE,
-  HID_REQ_GET_REPORT_DESC,
   HID_REQ_GET_HID_DESC,
+  HID_REQ_GET_REPORT_DESC,
   HID_REQ_SET_IDLE,
   HID_REQ_SET_PROTOCOL,
   HID_REQ_SET_REPORT,
+  HID_REQ_IDLE,
 
 }
 HID_CtlStateTypeDef;
@@ -231,6 +231,7 @@ HID_HandleTypeDef;
 typedef struct _HIDComposite_Process
 {
 	uint8_t num_interfaces;
+	uint8_t interface_to_be_processed;
 	HID_HandleTypeDef *HID_Handles[HID_MAX_COMPOSITED_INTERFACES];
 }
 HID_Composite_TypeDef;
