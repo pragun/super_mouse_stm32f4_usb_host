@@ -413,189 +413,6 @@ static USBH_StatusTypeDef USBH_HID_ClassRequest(USBH_HandleTypeDef *phost)
 }
 
 
-
-/**
-  * @brief  USBH_HID_Process
-  *         The function is for managing state machine for HID data transfers
-  * @param  phost: Host handle
-  * @retval USBH Status
-  */
-//This one works but is very inelegant, inflexbile and verbosely written
-//USBH_HID_Process_old
-static USBH_StatusTypeDef USBH_HID_Process_old(USBH_HandleTypeDef *phost)
-{
-  USBH_StatusTypeDef status = USBH_OK;
-  USBH_StatusTypeDef status1 = USBH_OK;
-  USBH_URBStateTypeDef status2 = URB_IDLE;
-
-  HID_Composite_TypeDef* HID_Composite = (HID_Composite_TypeDef*) phost->pActiveClass->pData;
-  uint8_t num_interfaces = HID_Composite->num_interfaces;
-  HID_HandleTypeDef	**HID_Handles =  HID_Composite->HID_Handles;
-
-  HID_HandleTypeDef *HID_Handle =  HID_Handles[0];
-  HID_HandleTypeDef *HID_Handle2 = HID_Handles[1];
-
-
-  if (HID_Handle->state == HID_INIT){
-	  HID_Handle->Init(phost,0);
-	  HID_Handle->state = HID_IDLE;
-	  return USBH_OK;
-  }
-
-  if (HID_Handle2->state == HID_INIT){
-	  HID_Handle2->Init(phost,1);
-	  HID_Handle2->state = HID_IDLE;
-	  return USBH_OK;
-  }
-
-  if ((HID_Handle->state == HID_IDLE) || (HID_Handle2->state == HID_IDLE)){
-	  if (HID_Handle->state == HID_IDLE){
-		  status = USBH_HID_GetReport (phost, 0x01U, 0U, HID_Handle->pData, (uint8_t)HID_Handle->length, HID_Handle->interface);
-		  if (status == USBH_OK)
-		  {
-			USBH_HID_FifoWrite(&HID_Handle->fifo, test_usb_buff, HID_Handle->length);
-			HID_Handle->state = HID_SYNC;
-		  }
-		  else if (status == USBH_BUSY)
-		  {
-			HID_Handle->state = HID_IDLE;
-			status = USBH_OK;
-		  }
-		  else if (status == USBH_NOT_SUPPORTED)
-		  {
-			HID_Handle->state = HID_SYNC;
-			status = USBH_OK;
-		  }
-		  else
-		  {
-			HID_Handle->state = HID_ERROR;
-			status = USBH_FAIL;
-		  }
-		  return status;
-	  }
-	  if (HID_Handle2->state == HID_IDLE){
-		  status = USBH_HID_GetReport (phost, 0x01U, 0U, HID_Handle2->pData, (uint8_t)HID_Handle2->length, HID_Handle2->interface);
-		  if (status == USBH_OK)
-		  {
-			USBH_HID_FifoWrite(&HID_Handle2->fifo, test_usb_buff, HID_Handle2->length);
-			HID_Handle2->state = HID_SYNC;
-		  }
-		  else if (status == USBH_BUSY)
-		  {
-			HID_Handle2->state = HID_IDLE;
-			status = USBH_OK;
-		  }
-		  else if (status == USBH_NOT_SUPPORTED)
-		  {
-			HID_Handle2->state = HID_SYNC;
-			status = USBH_OK;
-		  }
-		  else
-		  {
-			HID_Handle2->state = HID_ERROR;
-			status = USBH_FAIL;
-		  }
-		  return status;
-	  }	}
-
-  if ((HID_Handle->state == HID_SYNC) || (HID_Handle2->state == HID_SYNC)){
-
-	  if(HID_Handle2->state == HID_SYNC){
-	  	  		  if(phost->Timer & 1U)
-	  	  		  	      {
-	  	  		  	        HID_Handle2->state = HID_GET_DATA;
-	  	  		  	      }
-	  	  		  return USBH_OK;
-	  	  }
-
-	  if(HID_Handle->state == HID_SYNC){
-		  if(phost->Timer & 1U)
-		  	      {
-		  	        HID_Handle->state = HID_GET_DATA;
-		  	      }
-		  	  return USBH_OK;
-	  }
-  }
-
-  if ((HID_Handle->state == HID_GET_DATA) || (HID_Handle2->state == HID_GET_DATA)){
-	  if (HID_Handle->state == HID_GET_DATA){
-		  status1 = USBH_InterruptReceiveData(phost, test_usb_buff,
-		                                (uint8_t)HID_Handle->length,
-		                                HID_Handle->InPipe);
-
-		  HID_Handle->state = HID_POLL;
-		  HID_Handle->timer = phost->Timer;
-		  HID_Handle->DataReady = 0U;
-		  return USBH_OK;
-	  }
-
-	  if (HID_Handle2->state == HID_GET_DATA){
-	  		  status1 = USBH_InterruptReceiveData(phost, test_usb_buff,
-	  		                                (uint8_t)HID_Handle2->length,
-	  		                                HID_Handle2->InPipe);
-
-	  		  HID_Handle2->state = HID_POLL;
-	  		  HID_Handle2->timer = phost->Timer;
-	  		  HID_Handle2->DataReady = 0U;
-	  		  return USBH_OK;
-	  }
-  }
-
-  if ((HID_Handle->state == HID_POLL) || (HID_Handle2->state == HID_POLL)){
-  	  if (HID_Handle->state == HID_POLL){
-  		if(USBH_LL_GetURBState(phost , HID_Handle->InPipe) == USBH_URB_DONE)
-		{
-		  if(HID_Handle->DataReady == 0U)
-		  {
-			USBH_HID_FifoWrite(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
-			HID_Handle->DataReady = 1U;
-			USBH_HID_EventCallback(phost);
-		  }
-		}
-		else
-		{
-		   /* IN Endpoint Stalled */
-		  if(USBH_LL_GetURBState(phost, HID_Handle->InPipe) == USBH_URB_STALL)
-		  {
-			/* Issue Clear Feature on interrupt IN endpoint */
-			if(USBH_ClrFeature(phost, HID_Handle->ep_addr) == USBH_OK)
-			{
-			  /* Change state to issue next IN token */
-			  HID_Handle->state = HID_GET_DATA;
-			}
-		  }
-		}
-  	  }
-
-  	  if (HID_Handle2->state == HID_POLL){
-  		if(USBH_LL_GetURBState(phost , HID_Handle2->InPipe) == USBH_URB_DONE)
-		{
-		  if(HID_Handle2->DataReady == 0U)
-		  {
-			USBH_HID_FifoWrite(&HID_Handle2->fifo, HID_Handle2->pData, HID_Handle2->length);
-			HID_Handle2->DataReady = 1U;
-			USBH_HID_EventCallback(phost);
-		  }
-		}
-		else
-		{
-		   /* IN Endpoint Stalled */
-		  if(USBH_LL_GetURBState(phost, HID_Handle2->InPipe) == USBH_URB_STALL)
-		  {
-			/* Issue Clear Feature on interrupt IN endpoint */
-			if(USBH_ClrFeature(phost, HID_Handle2->ep_addr) == USBH_OK)
-			{
-			  /* Change state to issue next IN token */
-				HID_Handle2->state = HID_GET_DATA;
-			}
-		  }
-		}
-  		return USBH_OK;
-  	  }
-    }
-  	return USBH_OK;
-  }
-
 //USBH_HID_Process_new
 static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
 {
@@ -659,63 +476,51 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
 		HID_Handle->DataReady = 0U;
 		break;
 
+	case HID_POLL:
+		if(USBH_LL_GetURBState(phost , HID_Handle->InPipe) == USBH_URB_DONE)
+		{
+			if(HID_Handle->DataReady == 0U)
+			{
+				USBH_HID_FifoWrite(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
+				HID_Handle->DataReady = 1U;
+				USBH_HID_EventCallback(phost);
+
+#if (USBH_USE_OS == 1U)
+				phost->os_msg = (uint32_t)USBH_URB_EVENT;
+#if (osCMSIS < 0x20000U)
+				(void)osMessagePut(phost->os_event, phost->os_msg, 0U);
+#else
+				(void)osMessageQueuePut(phost->os_event, &phost->os_msg, 0U, NULL);
+#endif
+#endif
+			}
+		}
+		else
+		{
+			/* IN Endpoint Stalled */
+			if(USBH_LL_GetURBState(phost, HID_Handle->InPipe) == USBH_URB_STALL)
+			{
+				/* Issue Clear Feature on interrupt IN endpoint */
+				if(USBH_ClrFeature(phost, HID_Handle->ep_addr) == USBH_OK)
+				{
+					/* Change state to issue next IN token */
+					HID_Handle->state = HID_GET_DATA;
+				}
+			}
+		}
+		break;
+
 	default:
 		break;
 	}
 
-	if(prev_state != HID_Handle->state){
-		for (i=0; i<num_interfaces; i++){
-			// This favors an interface for processing if its control state hasn't progressed as much as the next to be processed interface
-			if (HID_Composite->HID_Handles[i]->state < HID_Handle->state){
-				HID_Composite->interface_to_be_processed = i;
-			}
+	HID_Composite->interface_to_be_processed = (HID_Composite->interface_to_be_processed + 1) % num_interfaces;
+	for (i=0; i<num_interfaces; i++){
+		// This favors an interface for processing if its control state hasn't progressed as much as the next to be processed interface
+		if (HID_Composite->HID_Handles[i]->state < HID_Handle->state){
+			HID_Composite->interface_to_be_processed = i;
 		}
 	}
-
-	if(prev_state == HID_Handle->state){
-		for (i=0; i<num_interfaces; i++){
-			HID_Handle = HID_Handles[i];
-			if(HID_Handle->state == HID_POLL){
-				if(USBH_LL_GetURBState(phost , HID_Handle->InPipe) == USBH_URB_DONE)
-				{
-					if(HID_Handle->DataReady == 0U)
-					{
-						USBH_HID_FifoWrite(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
-						HID_Handle->DataReady = 1U;
-						USBH_HID_EventCallback(phost);
-
-	#if (USBH_USE_OS == 1U)
-						phost->os_msg = (uint32_t)USBH_URB_EVENT;
-	#if (osCMSIS < 0x20000U)
-						(void)osMessagePut(phost->os_event, phost->os_msg, 0U);
-	#else
-						(void)osMessageQueuePut(phost->os_event, &phost->os_msg, 0U, NULL);
-	#endif
-	#endif
-					}
-				}
-				else
-				{
-					/* IN Endpoint Stalled */
-					if(USBH_LL_GetURBState(phost, HID_Handle->InPipe) == USBH_URB_STALL)
-					{
-						/* Issue Clear Feature on interrupt IN endpoint */
-						if(USBH_ClrFeature(phost, HID_Handle->ep_addr) == USBH_OK)
-						{
-							/* Change state to issue next IN token */
-							HID_Handle->state = HID_GET_DATA;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	//If the control state of one interface has progressed,
-	//Select the next interface to be processed the next time this function comes around
-	/* if(prev_state != HID_Handle->state){
-		HID_Composite->interface_to_be_processed = (HID_Composite->interface_to_be_processed + 1) % num_interfaces;
-	}*/
 
 	return status;
 }
