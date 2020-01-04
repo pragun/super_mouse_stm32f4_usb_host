@@ -122,8 +122,6 @@ USBH_ClassTypeDef  HID_Class =
 };
 
 
-#define HID_MAX_HANDLES 2
-uint8_t test_usb_buff[64];
 /**
 * @}
 */
@@ -431,6 +429,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
 	HID_HandleTypeDef *HID_Handle = HID_Handles[HID_Composite->interface_to_be_processed];
 	HID_StateTypeDef  prev_state = HID_Handle->state;
 	uint8_t i = 0;
+	uint8_t j = (HID_Composite->interface_to_be_processed*32);
 
 	switch (HID_Handle->state)
 	{
@@ -474,7 +473,7 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
 		break;
 
 	case HID_GET_DATA:
-		USBH_InterruptReceiveData(phost, test_usb_buff,
+		USBH_InterruptReceiveData(phost, HID_Handle->pData,
 				(uint8_t)HID_Handle->length,
 				HID_Handle->InPipe);
 
