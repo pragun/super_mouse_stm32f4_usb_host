@@ -222,6 +222,8 @@ typedef struct _HID_Process
   uint8_t              DataReady;
   HID_DescTypeDef      HID_Desc;
   uint8_t			   interface;
+  uint8_t			   supports_set_protocol;
+  uint8_t			   report_descriptor[256];
   USBH_StatusTypeDef  ( * Init)(USBH_HandleTypeDef *phost, uint8_t interface);
   uint8_t			  ( * Callback)(USBH_HandleTypeDef *phost, uint8_t*, uint8_t length);
 }
@@ -304,11 +306,11 @@ USBH_StatusTypeDef USBH_HID_GetReport (USBH_HandleTypeDef *phost,
                                   uint8_t reportLen,
 								  uint8_t interface);
 
-USBH_StatusTypeDef USBH_HID_GetHIDReportDescriptor (USBH_HandleTypeDef *phost,
-                                            uint16_t length);
+USBH_StatusTypeDef USBH_HID_GetHIDReportDescriptor (USBH_HandleTypeDef *phost, uint8_t wIndex,
+                                            uint8_t *buf, uint16_t length);
 
-USBH_StatusTypeDef USBH_HID_GetHIDDescriptor (USBH_HandleTypeDef *phost,
-                                            uint16_t length);
+USBH_StatusTypeDef USBH_HID_GetHIDDescriptor (USBH_HandleTypeDef *phost, uint8_t wIndex,
+											uint8_t *buf, uint16_t length);
 
 USBH_StatusTypeDef USBH_HID_SetIdle (USBH_HandleTypeDef *phost,
                                   uint8_t duration,

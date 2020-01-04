@@ -220,6 +220,37 @@ USBH_StatusTypeDef USBH_GetDescriptor(USBH_HandleTypeDef *phost,
 }
 
 /**
+  * @brief  USBH_GetDescriptor_wIndex
+  * 	    Additional function to request HID Report descriptors for
+  * 	    USB Devices with multiple interfaces
+  *         Issues Descriptor command to the device. Once the response received,
+  *         it parses the descriptor and updates the status.
+  * @param  phost: Host Handle
+  * @param  req_type: Descriptor type
+  * @param  value_idx: Value for the GetDescriptr request
+  * @param  buff: Buffer to store the descriptor
+  * @param  length: Length of the descriptor
+  * @retval USBH Status
+  */
+USBH_StatusTypeDef USBH_GetDescriptor_wIndex(USBH_HandleTypeDef *phost,
+                               uint8_t  req_type,
+                               uint16_t value_idx,
+							   uint8_t wIndex,
+                               uint8_t* buff,
+                               uint16_t length)
+{
+  if(phost->RequestState == CMD_SEND)
+  {
+    phost->Control.setup.b.bmRequestType = USB_D2H | req_type;
+    phost->Control.setup.b.bRequest = USB_REQ_GET_DESCRIPTOR;
+    phost->Control.setup.b.wValue.w = value_idx;
+    phost->Control.setup.b.wIndex.w = wIndex;
+    phost->Control.setup.b.wLength.w = length;
+  }
+  return USBH_CtlReq(phost, buff, length);
+}
+
+/**
   * @brief  USBH_SetAddress
   *         This command sets the address to the connected device
   * @param  phost: Host Handle

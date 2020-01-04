@@ -107,7 +107,6 @@ return len;
 __attribute__((weak)) int _write(int file, char *ptr, int len)
 {
 	int DataIdx;
-	this_test();
 
 	for (DataIdx = 0; DataIdx < len; DataIdx++)
 	{
