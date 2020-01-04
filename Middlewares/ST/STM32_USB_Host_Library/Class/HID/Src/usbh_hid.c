@@ -534,29 +534,22 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
   */
 static USBH_StatusTypeDef USBH_HID_SOFProcess(USBH_HandleTypeDef *phost)
 {
-  //HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
 	HID_Composite_TypeDef* HID_Composite = (HID_Composite_TypeDef*) phost->pActiveClass->pData;
-	  uint8_t num_interfaces = HID_Composite->num_interfaces;
-	  HID_HandleTypeDef	**HID_Handles =  HID_Composite->HID_Handles;
+	uint8_t num_interfaces = HID_Composite->num_interfaces;
+	HID_HandleTypeDef	**HID_Handles =  HID_Composite->HID_Handles;
+	HID_HandleTypeDef *HID_Handle;
+	uint8_t i = 0;
 
-	  HID_HandleTypeDef *HID_Handle =  HID_Handles[0];
-	  HID_HandleTypeDef *HID_Handle2 = HID_Handles[1];
-
-  if(HID_Handle->state == HID_POLL)
-  {
-    if(( phost->Timer - HID_Handle->timer) >= HID_Handle->poll)
-    {
-      HID_Handle->state = HID_GET_DATA;
-    }
-  }
-
-  if(HID_Handle2->state == HID_POLL)
-    {
-      if(( phost->Timer - HID_Handle2->timer) >= HID_Handle2->poll)
-      {
-        HID_Handle2->state = HID_GET_DATA;
-      }
-    }
+	for (i=0; i<num_interfaces; i++){
+		HID_Handle = HID_Handles[i];
+		if(HID_Handle->state == HID_POLL)
+		  {
+		    if(( phost->Timer - HID_Handle->timer) >= HID_Handle->poll)
+		    {
+		      HID_Handle->state = HID_GET_DATA;
+		    }
+		  }
+	}
   return USBH_OK;
 }
 
