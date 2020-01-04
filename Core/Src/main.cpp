@@ -92,6 +92,8 @@ int timer_count = 0;
 int tim10_count = 0;
 int uart_tx_count = 0;
 int usb_event_num = 0;
+int mouse_event_num = 0;
+int keyboard_event_num = 0;
 
 #define UART_TX_BUF_SIZE 512
 
@@ -134,6 +136,29 @@ void USBH_HID_EventCallback(USBH_HandleTypeDef *phost)
 {
 	printf("Event received %d\n",usb_event_num);
 	usb_event_num ++;
+}
+
+extern "C" uint8_t MouseCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len);
+uint8_t MouseCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len)
+{
+	printf("Mouse received %d bytes:", len);
+	for(uint8_t i = 0; i<len; i++){
+		printf("%02X ",buff[i]);
+	}
+	printf("\n");
+
+	mouse_event_num ++;
+}
+
+extern "C" uint8_t KeyboardCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len);
+uint8_t KeyboardCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len)
+{
+	printf("Keyboard received %d bytes:", len);
+	for(uint8_t i = 0; i<len; i++){
+		printf("%02X ",buff[i]);
+	}
+	printf("\n");
+	keyboard_event_num ++;
 }
 
 

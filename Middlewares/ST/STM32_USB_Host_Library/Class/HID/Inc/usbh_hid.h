@@ -223,6 +223,7 @@ typedef struct _HID_Process
   HID_DescTypeDef      HID_Desc;
   uint8_t			   interface;
   USBH_StatusTypeDef  ( * Init)(USBH_HandleTypeDef *phost, uint8_t interface);
+  uint8_t			  ( * Callback)(USBH_HandleTypeDef *phost, uint8_t*, uint8_t length);
 }
 HID_HandleTypeDef;
 

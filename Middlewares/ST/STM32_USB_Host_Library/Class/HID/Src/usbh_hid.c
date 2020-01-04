@@ -109,6 +109,9 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost
 extern USBH_StatusTypeDef USBH_HID_MouseInit(USBH_HandleTypeDef *phost, uint8_t interface);
 extern USBH_StatusTypeDef USBH_HID_KeybdInit(USBH_HandleTypeDef *phost, uint8_t interface);
 
+extern uint8_t MouseCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len);
+extern uint8_t KeyboardCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len);
+
 USBH_ClassTypeDef  HID_Class =
 {
   "HID",
@@ -199,12 +202,14 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost
       USBH_UsrLog ("KeyBoard device found!");
       HAL_Delay(50);
       HID_Handle->Init =  USBH_HID_KeybdInit;
+      HID_Handle->Callback = KeyboardCallback;
     }
     else if(phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bInterfaceProtocol  == HID_MOUSE_BOOT_CODE)
     {
       USBH_UsrLog ("Mouse device found!");
       HAL_Delay(50);
       HID_Handle->Init =  USBH_HID_MouseInit;
+      HID_Handle->Callback = MouseCallback;
     }
     else
     {
@@ -489,7 +494,8 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
 			{
 				USBH_HID_FifoWrite(&HID_Handle->fifo, HID_Handle->pData, HID_Handle->length);
 				HID_Handle->DataReady = 1U;
-				USBH_HID_EventCallback(phost);
+				HID_Handle->Callback(phost,HID_Handle->pData, HID_Handle->length);
+				//USBH_HID_EventCallback(phost);
 
 #if (USBH_USE_OS == 1U)
 				phost->os_msg = (uint32_t)USBH_URB_EVENT;
