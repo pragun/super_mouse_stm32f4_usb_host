@@ -331,10 +331,11 @@ USBH_StatusTypeDef USBH_HID_KeybdInit(USBH_HandleTypeDef *phost, uint8_t interfa
     keybd_report_data[x] = 0U;
   }
 
-  if(HID_Handle->length > (sizeof(keybd_report_data)/sizeof(uint32_t)))
+  /* if(HID_Handle->length > (sizeof(keybd_report_data)/sizeof(uint32_t)))
   {
     HID_Handle->length = (sizeof(keybd_report_data)/sizeof(uint32_t));
-  }
+  } */
+
   //HID_Handle->pData = (uint8_t*)(void *)keybd_report_data;
   HID_Handle->pData  = keybd_usb_rcv_buff;
   USBH_HID_FifoInit(&HID_Handle->fifo, phost->device.Data, HID_QUEUE_SIZE * sizeof(keybd_report_data));

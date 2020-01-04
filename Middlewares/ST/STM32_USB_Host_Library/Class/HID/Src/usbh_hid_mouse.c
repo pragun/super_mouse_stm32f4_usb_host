@@ -188,10 +188,11 @@ USBH_StatusTypeDef USBH_HID_MouseInit(USBH_HandleTypeDef *phost, uint8_t interfa
 
   mouse_report_data[0] = 0U;
 
-  if(HID_Handle->length > sizeof(mouse_report_data))
+  /* if(HID_Handle->length > sizeof(mouse_report_data))
   {
     HID_Handle->length = sizeof(mouse_report_data);
-  }
+  } */
+
   //HID_Handle->pData = (uint8_t *)(void *)mouse_report_data;
   HID_Handle->pData = mouse_usb_rcv_buff;
 

@@ -130,9 +130,6 @@ USBH_ClassTypeDef  HID_Class =
 * @}
 */
 
-
-
-
 /** @defgroup USBH_HID_CORE_Private_Functions
 * @{
 */

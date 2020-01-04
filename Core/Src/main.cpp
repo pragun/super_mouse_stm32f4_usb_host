@@ -117,12 +117,10 @@ void timer10_period_elapsed(TIM_HandleTypeDef *htim){
 	}
 }
 
-
 void uart_transfer_completed(UART_HandleTypeDef *huart){
 	uart_tx_buffer.send_complete();
 	uart_tx_count ++;
 }
-
 
 extern "C" int _write(int file, char *ptr, int len);
 int _write(int file, char *ptr, int len)
@@ -147,7 +145,7 @@ uint8_t PrintHexBuf(uint8_t *buff, uint8_t len){
 extern "C" uint8_t MouseCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len);
 uint8_t MouseCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len)
 {
-	printf("Mouse received %d bytes:", len);
+	printf("Mouse received %d bytes:\r\n", len);
 	PrintHexBuf(buff, len);
 	mouse_event_num ++;
 	return 0;
@@ -156,12 +154,11 @@ uint8_t MouseCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len)
 extern "C" uint8_t KeyboardCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len);
 uint8_t KeyboardCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len)
 {
-	printf("Keyboard received %d bytes:", len);
+	printf("Keyboard received %d bytes:\r\n", len);
 	PrintHexBuf(buff, len);
 	keyboard_event_num ++;
 	return 0;
 }
-
 
 int main(void)
 {
@@ -169,7 +166,6 @@ int main(void)
 
   /* USER CODE END 1 */
   
-
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
