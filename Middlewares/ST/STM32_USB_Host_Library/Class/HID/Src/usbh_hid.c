@@ -288,30 +288,37 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost
   */
 USBH_StatusTypeDef static USBH_HID_InterfaceDeInit (USBH_HandleTypeDef *phost)
 {
-  HID_HandleTypeDef *HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
-  HID_Composite_TypeDef* HID_Composite = (HID_Composite_TypeDef*) phost->pActiveClass->pData;
+	HID_Composite_TypeDef* HID_Composite = (HID_Composite_TypeDef*) phost->pActiveClass->pData;
+	uint8_t num_interfaces = HID_Composite->num_interfaces;
+	HID_HandleTypeDef	**HID_Handles =  HID_Composite->HID_Handles;
+	HID_HandleTypeDef *HID_Handle;
+	uint8_t i = 0;
 
-  if(HID_Handle->InPipe != 0x00U)
-  {
-    USBH_ClosePipe  (phost, HID_Handle->InPipe);
-    USBH_FreePipe  (phost, HID_Handle->InPipe);
-    HID_Handle->InPipe = 0U;     /* Reset the pipe as Free */
-  }
+	for (i=0; i<num_interfaces; i++){
+		HID_Handle = HID_Handles[i];
 
-  if(HID_Handle->OutPipe != 0x00U)
-  {
-    USBH_ClosePipe(phost, HID_Handle->OutPipe);
-    USBH_FreePipe  (phost, HID_Handle->OutPipe);
-    HID_Handle->OutPipe = 0U;     /* Reset the pipe as Free */
-  }
+		if(HID_Handle->InPipe != 0x00U)
+		{
+			USBH_ClosePipe  (phost, HID_Handle->InPipe);
+			USBH_FreePipe  (phost, HID_Handle->InPipe);
+			HID_Handle->InPipe = 0U;     /* Reset the pipe as Free */
+		}
 
-  if(phost->pActiveClass->pData)
-  {
-    USBH_free (phost->pActiveClass->pData);
-    phost->pActiveClass->pData = 0U;
-  }
+		if(HID_Handle->OutPipe != 0x00U)
+		{
+			USBH_ClosePipe(phost, HID_Handle->OutPipe);
+			USBH_FreePipe  (phost, HID_Handle->OutPipe);
+			HID_Handle->OutPipe = 0U;     /* Reset the pipe as Free */
+		}
+	}
 
-  return USBH_OK;
+	if(phost->pActiveClass->pData)
+	{
+		USBH_free (phost->pActiveClass->pData);
+		phost->pActiveClass->pData = 0U;
+	}
+
+	return USBH_OK;
 }
 
 /**
