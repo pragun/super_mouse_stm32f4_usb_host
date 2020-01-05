@@ -129,7 +129,7 @@ int _write(int file, char *ptr, int len)
 	return len;
 }
 
-extern "C" uint8_t PrintHexBuf(uint8_t *buff, uint8_t len);
+//extern "C" uint8_t PrintHexBuf(uint8_t *buff, uint8_t len);
 uint8_t PrintHexBuf(uint8_t *buff, uint8_t len){
 	for(uint8_t i = 0; i<len; i++){
 		printf("%02X ",buff[i]);
@@ -142,7 +142,7 @@ uint8_t PrintHexBuf(uint8_t *buff, uint8_t len){
 }
 
 
-extern "C" uint8_t MouseCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len);
+//extern "C" uint8_t MouseCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len);
 uint8_t MouseCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len)
 {
 	printf("Mouse received %d bytes:\r\n", len);
@@ -151,7 +151,7 @@ uint8_t MouseCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len)
 	return 0;
 }
 
-extern "C" uint8_t KeyboardCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len);
+//extern "C" uint8_t KeyboardCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len);
 uint8_t KeyboardCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len)
 {
 	printf("Keyboard received %d bytes:\r\n", len);

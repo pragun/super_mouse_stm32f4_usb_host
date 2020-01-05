@@ -20,7 +20,7 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include "usbh_core.h"
+#include <usbh_core.hpp>
 
 /* USER CODE BEGIN Includes */
 

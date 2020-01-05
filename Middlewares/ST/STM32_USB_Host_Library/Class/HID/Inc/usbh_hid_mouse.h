@@ -26,7 +26,7 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "usbh_hid.h"
+#include <usbh_hid.hpp>
 
 /** @addtogroup USBH_LIB
   * @{

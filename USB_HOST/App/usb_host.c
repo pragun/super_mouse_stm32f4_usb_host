@@ -21,9 +21,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#include <usbh_core.hpp>
+#include <usbh_hid.hpp>
 #include "usb_host.h"
-#include "usbh_core.h"
-#include "usbh_hid.h"
 
 /* USER CODE BEGIN Includes */
 

@@ -39,10 +39,10 @@
   EndBSPDependencies */
 
 /* Includes ------------------------------------------------------------------*/
-#include "usbh_hid.h"
+#include <usbh_hid.hpp>
 #include "usbh_hid_parser.h"
 #include "stdbool.h"
-
+//#include "hid_device_drivers.h"
 
 /** @addtogroup USBH_LIB
 * @{
@@ -124,7 +124,6 @@ USBH_ClassTypeDef  HID_Class =
   USBH_HID_SOFProcess,
   NULL,
 };
-
 
 /**
 * @}

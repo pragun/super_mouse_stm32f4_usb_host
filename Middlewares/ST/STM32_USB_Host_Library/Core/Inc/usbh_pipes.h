@@ -26,7 +26,7 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "usbh_core.h"
+#include <usbh_core.hpp>
 
 /** @addtogroup USBH_LIB
   * @{
