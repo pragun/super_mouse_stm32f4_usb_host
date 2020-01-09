@@ -25,7 +25,7 @@
   EndBSPDependencies */
 
 /* Includes ------------------------------------------------------------------*/
-#include "usbh_hid_parser.h"
+#include <usbh_hid_parser.h>
 
 
 /** @addtogroup USBH_LIB
@@ -97,6 +97,7 @@
   * @param  ndx: report index
 * @retval status (0 : fail / otherwise: item value)
   */
+
 uint32_t HID_ReadItem(HID_Report_ItemTypedef *ri, uint8_t ndx)
 {
   uint32_t val = 0U;

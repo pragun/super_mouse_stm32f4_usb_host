@@ -25,8 +25,8 @@
   EndBSPDependencies */
 
 /* Includes ------------------------------------------------------------------*/
-#include "usbh_hid_mouse.h"
-#include "usbh_hid_parser.h"
+#include <usbh_hid_mouse.h>
+#include <usbh_hid_parser.h>
 
 
 /** @addtogroup USBH_LIB

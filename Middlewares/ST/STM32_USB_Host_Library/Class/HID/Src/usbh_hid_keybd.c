@@ -27,8 +27,8 @@
   EndBSPDependencies */
 
 /* Includes ------------------------------------------------------------------*/
-#include "usbh_hid_keybd.h"
-#include "usbh_hid_parser.h"
+#include <usbh_hid_keybd.h>
+#include <usbh_hid_parser.h>
 
 /** @addtogroup USBH_LIB
 * @{

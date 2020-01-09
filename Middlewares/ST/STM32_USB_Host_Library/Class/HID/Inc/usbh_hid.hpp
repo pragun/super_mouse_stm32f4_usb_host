@@ -21,14 +21,17 @@
 #ifndef __USBH_HID_H
 #define __USBH_HID_H
 
+#include <functional>
 #ifdef __cplusplus
+
  extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include <usbh_core.hpp>
-#include "usbh_hid_mouse.h"
-#include "usbh_hid_keybd.h"
+//#include <usbh_hid_mouse.h>
+//#include <usbh_hid_keybd.h>
+
 
 /** @addtogroup USBH_LIB
   * @{
@@ -223,9 +226,14 @@ typedef struct _HID_Process
   HID_DescTypeDef      HID_Desc;
   uint8_t			   interface;
   uint8_t			   supports_set_protocol;
-  uint8_t			   report_descriptor[256];
+  uint8_t			   *report_descriptor_buffer;
+  uint8_t			   *report_buffer;
   USBH_StatusTypeDef  ( * Init)(USBH_HandleTypeDef *phost, uint8_t interface);
   uint8_t			  ( * Callback)(USBH_HandleTypeDef *phost, uint8_t*, uint8_t length);
+  std::function<USBH_StatusTypeDef()> deinit;
+  std::function<USBH_StatusTypeDef()> init;
+  std::function<USBH_StatusTypeDef(uint8_t *buf, uint8_t len)> report_descriptor_callback;
+  std::function<USBH_StatusTypeDef(uint8_t *buf, uint8_t len)> report_callback;
 }
 HID_HandleTypeDef;
 

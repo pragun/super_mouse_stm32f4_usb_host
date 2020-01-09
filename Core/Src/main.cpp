@@ -19,8 +19,8 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
+#include <usb_host.hpp>
 #include "main.h"
-#include "usb_host.h"
 #include "usbh_def.h"
 #include <cstdio>
 #include "circular_buffer.hpp"
@@ -106,7 +106,6 @@ CircularBuffer<UART_TX_BUF_SIZE> uart_tx_buffer;
 void timer11_period_elapsed(TIM_HandleTypeDef *htim){
 	timer_count ++;
 	printf("Keeping alive.. %d\r\n",timer_count);
-
 }
 
 void timer10_period_elapsed(TIM_HandleTypeDef *htim){

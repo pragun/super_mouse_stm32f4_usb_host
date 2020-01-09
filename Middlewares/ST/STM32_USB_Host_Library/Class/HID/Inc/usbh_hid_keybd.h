@@ -27,7 +27,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <usbh_hid.hpp>
-#include "usbh_hid_keybd.h"
+#include <usbh_hid_keybd.h>
 
 /** @addtogroup USBH_LIB
   * @{
