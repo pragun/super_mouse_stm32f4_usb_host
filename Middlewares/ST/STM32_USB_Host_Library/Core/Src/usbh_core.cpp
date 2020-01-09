@@ -21,7 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include <usbh_core.hpp>
-
+#include <vector>
 
 /** @addtogroup USBH_LIB
   * @{
@@ -317,6 +317,31 @@ uint8_t  USBH_FindInterface(USBH_HandleTypeDef *phost, uint8_t Class, uint8_t Su
     if_ix++;
   }
   return 0xFFU;
+}
+
+std::vector<uint8_t>  USBH_FindInterfaces(USBH_HandleTypeDef *phost, uint8_t Class, uint8_t SubClass, uint8_t Protocol)
+{
+  std::vector<uint8_t> interfaces = {};
+
+  USBH_InterfaceDescTypeDef    *pif ;
+  USBH_CfgDescTypeDef          *pcfg ;
+  uint8_t                        if_ix = 0U;
+
+  pif = (USBH_InterfaceDescTypeDef *)0;
+  pcfg = &phost->device.CfgDesc;
+
+  while (if_ix < USBH_MAX_NUM_INTERFACES)
+  {
+    pif = &pcfg->Itf_Desc[if_ix];
+    if(((pif->bInterfaceClass == Class) || (Class == 0xFFU))&&
+       ((pif->bInterfaceSubClass == SubClass) || (SubClass == 0xFFU))&&
+         ((pif->bInterfaceProtocol == Protocol) || (Protocol == 0xFFU)))
+    {
+      interfaces.insert(interfaces.begin(),if_ix);
+    }
+    if_ix++;
+  }
+  return interfaces;
 }
 
 /**

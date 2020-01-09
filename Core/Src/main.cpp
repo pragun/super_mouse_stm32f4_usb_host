@@ -140,25 +140,6 @@ uint8_t PrintHexBuf(uint8_t *buff, uint8_t len){
 	return 0;
 }
 
-
-//extern "C" uint8_t MouseCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len);
-uint8_t MouseCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len)
-{
-	printf("Mouse received %d bytes:\r\n", len);
-	PrintHexBuf(buff, len);
-	mouse_event_num ++;
-	return 0;
-}
-
-//extern "C" uint8_t KeyboardCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len);
-uint8_t KeyboardCallback(USBH_HandleTypeDef *phost, uint8_t *buff, uint8_t len)
-{
-	printf("Keyboard received %d bytes:\r\n", len);
-	PrintHexBuf(buff, len);
-	keyboard_event_num ++;
-	return 0;
-}
-
 int main(void)
 {
   /* USER CODE BEGIN 1 */

@@ -40,9 +40,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <logitech_g600.hpp>
-
+#include <generic_hid_driver.hpp>
 #include <usbh_hid.hpp>
-#include <usbh_hid_parser.h>
 
 
 #include "stdbool.h"
@@ -103,6 +102,8 @@
 * @{
 */
 
+std::vector<uint8_t>  USBH_FindInterfaces(USBH_HandleTypeDef *phost, uint8_t Class, uint8_t SubClass, uint8_t Protocol);
+
 static USBH_StatusTypeDef USBH_HID_InterfaceInit  (USBH_HandleTypeDef *phost);
 static USBH_StatusTypeDef USBH_HID_InterfaceDeInit  (USBH_HandleTypeDef *phost);
 static USBH_StatusTypeDef USBH_HID_ClassRequest(USBH_HandleTypeDef *phost);
@@ -155,14 +156,18 @@ static USBH_StatusTypeDef USBH_HID_DriverInit(USBH_HandleTypeDef *phost)
 
   uint16_t vid = phost->device.DevDesc.idVendor;
   uint16_t pid = phost->device.DevDesc.idProduct;
+  std::vector<uint8_t> interfaces;
 
   HID_Device_Driver_Obj = NULL;
   if ((vid == 0x46d) && (pid == 0xc24a)){ //Logitech G600
 	  HID_Device_Driver_Obj = (HID_Device_Driver*) new Logitech_G600_Mouse_Driver();
+	  interfaces = HID_Device_Driver_Obj->hid_interface_list();
+  }else{
+	  HID_Device_Driver_Obj = (HID_Device_Driver*) new Generic_HID_Driver();
+	  interfaces = USBH_FindInterfaces(phost, USB_HID_CLASS, 0xFFu, 0xFFu);
   }
 
   if(HID_Device_Driver_Obj != NULL){
-	  auto interfaces = HID_Device_Driver_Obj->hid_interface_list();
 	  USBH_StatusTypeDef statuses[] = {USBH_FAIL,USBH_FAIL};
 	  uint8_t i = 0;
 	  USBH_StatusTypeDef status = USBH_FAIL;
@@ -189,7 +194,6 @@ static USBH_StatusTypeDef USBH_HID_DriverInit(USBH_HandleTypeDef *phost)
 
 static USBH_StatusTypeDef USBH_HID_DriverLessInit (USBH_HandleTypeDef *phost)
 {
-
   uint8_t protocol_list[] = {HID_MOUSE_BOOT_CODE,HID_KEYBRD_BOOT_CODE};
   uint8_t i = 0U;
   USBH_StatusTypeDef statuses[] = {USBH_FAIL,USBH_FAIL};
@@ -240,9 +244,6 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost
 	HID_Composite->HID_Handles[HID_Composite->num_interfaces] = (HID_HandleTypeDef *)USBH_malloc (sizeof(HID_HandleTypeDef));
 	HID_Handle = HID_Composite->HID_Handles[HID_Composite->num_interfaces];
 	HID_Composite->num_interfaces++;
-	//phost->pActiveClass->pData = (HID_HandleTypeDef *)USBH_malloc (2*sizeof(HID_HandleTypeDef));
-	//HID_Handle =  (HID_HandleTypeDef *) phost->pActiveClass->pData;
-	//HID_Handle = &HID_Handles[hid_handle_count];
 
 	HID_Handle->state = HID_ERROR;
 	HID_Handle->interface = interface;
@@ -254,31 +255,35 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost
 		HID_Handle->supports_set_protocol = 1;
 	}
 
+	/*
 	if(phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bInterfaceProtocol == HID_KEYBRD_BOOT_CODE)
 	{
 		USBH_UsrLog ("KeyBoard device found!");
 		HAL_Delay(50);
 		//HID_Handle->Init =  USBH_HID_KeybdInit;
-		HID_Handle->Callback = KeyboardCallback;
+		//HID_Handle->Callback = KeyboardCallback;
 	}
 	else if(phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bInterfaceProtocol  == HID_MOUSE_BOOT_CODE)
 	{
 		USBH_UsrLog ("Mouse device found!");
 		HAL_Delay(50);
 		//HID_Handle->Init =  USBH_HID_MouseInit;
-		HID_Handle->Callback = MouseCallback;
+		//HID_Handle->Callback = MouseCallback;
 	}
 	else
 	{
 		USBH_UsrLog ("Protocol not supported.");
 		return USBH_FAIL;
-	}
+	} */
+
 
 	HID_Handle->state     = HID_INIT;
 	HID_Handle->ctl_state = HID_REQ_INIT;
 	HID_Handle->ep_addr   = phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].Ep_Desc[0].bEndpointAddress;
 	HID_Handle->length    = phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].Ep_Desc[0].wMaxPacketSize;
 	HID_Handle->poll      = phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].Ep_Desc[0].bInterval ;
+	HID_Handle->report_buffer = 0;
+	HID_Handle->report_descriptor_buffer = 0;
 
 	if (HID_Handle->poll  < HID_MIN_POLL)
 	{
@@ -369,7 +374,11 @@ USBH_StatusTypeDef static USBH_HID_InterfaceDeInit (USBH_HandleTypeDef *phost)
 			USBH_FreePipe  (phost, HID_Handle->OutPipe);
 			HID_Handle->OutPipe = 0U;     /* Reset the pipe as Free */
 		}
+
+		HID_Device_Driver_Obj->hid_handle_deinit(HID_Handle);
 	}
+
+	delete HID_Device_Driver_Obj;
 
 	if(phost->pActiveClass->pData)
 	{
@@ -413,9 +422,9 @@ static USBH_StatusTypeDef USBH_HID_ClassRequest(USBH_HandleTypeDef *phost)
 		break;
 	case HID_REQ_GET_REPORT_DESC:
 		/* Get Report Desc */
-		if (USBH_HID_GetHIDReportDescriptor(phost, HID_Handle->interface, HID_Handle->report_descriptor_buffer, HID_Handle->HID_Desc.wItemLength) == USBH_OK)
+		if (USBH_HID_GetHIDReportDescriptor(phost, HID_Handle->interface, phost->device.Data , HID_Handle->HID_Desc.wItemLength) == USBH_OK)
 		{
-			HID_Device_Driver_Obj->process_hid_report_descriptor(HID_Handle, HID_Handle->report_descriptor_buffer, HID_Handle->HID_Desc.wItemLength);
+			HID_Device_Driver_Obj->process_hid_report_descriptor(HID_Handle, phost->device.Data, HID_Handle->HID_Desc.wItemLength);
 			/* The descriptor is available in phost->device.Data */
 			//printf("Received Report Descriptor for interface: %d, size:%d\r\n", HID_Handle->interface, HID_Handle->HID_Desc.wItemLength);
 			//PrintHexBuf(HID_Handle->report_descriptor_buffer, HID_Handle->HID_Desc.wItemLength);
@@ -495,13 +504,12 @@ static USBH_StatusTypeDef USBH_HID_Process(USBH_HandleTypeDef *phost)
 	uint8_t num_interfaces = HID_Composite->num_interfaces;
 	HID_HandleTypeDef	**HID_Handles =  HID_Composite->HID_Handles;
 	HID_HandleTypeDef *HID_Handle = HID_Handles[HID_Composite->interface_to_be_processed];
-	//HID_StateTypeDef  prev_state = HID_Handle->state;
 	uint8_t i = 0;
 
 	switch (HID_Handle->state)
 	{
 	case HID_INIT:
-		//HID_Handle->Init(phost, HID_Composite->interface_to_be_processed);
+		HID_Device_Driver_Obj->hid_handle_init(HID_Handle);
 		HID_Handle->state = HID_IDLE;
 		break;
 
