@@ -88,24 +88,34 @@ void MX_USB_HOST_Process(void);
   * @retval int
   */
 
-int timer_count = 0;
+int tim11_count = 0;
 int tim10_count = 0;
 int uart_tx_count = 0;
 int usb_event_num = 0;
 int mouse_event_num = 0;
 int keyboard_event_num = 0;
 
-#define UART_TX_BUF_SIZE 512
+#define USB_CDC_TX_BUF_SIZE 512
 
 int tx_count = 0;
+uint8_t spi_tx_count = 0;
 char* tx_buf = 0;
+char spi_tx_test[] = "Hello Mello !!\r\n";
 
+const uint16_t keep_alive_period = 20'000; //0.1milliseconds
 
-CircularBuffer<UART_TX_BUF_SIZE> uart_tx_buffer;
+CircularBuffer<USB_CDC_TX_BUF_SIZE> uart_tx_buffer;
+
+void spi_tx_complete(SPI_HandleTypeDef *hspi){
+	spi_tx_count ++;
+	printf("SPI TX Complete:%d\r\n",spi_tx_count);
+}
 
 void timer11_period_elapsed(TIM_HandleTypeDef *htim){
-	timer_count ++;
-	printf("Keeping alive.. %d\r\n",timer_count);
+	tim11_count ++;
+	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) spi_tx_test, 17);
+	sprintf(spi_tx_test,"Hello Mello %03d\r\n",spi_tx_count);
+	printf("Host Keeping alive.. %d\r\n",tim11_count);
 }
 
 void timer10_period_elapsed(TIM_HandleTypeDef *htim){
@@ -177,8 +187,11 @@ int main(void)
   HAL_TIM_RegisterCallback(&htim11,HAL_TIM_PERIOD_ELAPSED_CB_ID, timer11_period_elapsed);
   HAL_TIM_RegisterCallback(&htim10,HAL_TIM_PERIOD_ELAPSED_CB_ID, timer10_period_elapsed);
   HAL_UART_RegisterCallback(&huart2, HAL_UART_TX_COMPLETE_CB_ID, uart_transfer_completed);
+  HAL_SPI_RegisterCallback(&hspi1, HAL_SPI_TX_COMPLETE_CB_ID, spi_tx_complete);
+
   HAL_TIM_Base_Start_IT(&htim11);
   HAL_TIM_Base_Start_IT(&htim10);
+
 
   /* USER CODE END 2 */
 
@@ -259,7 +272,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -413,7 +426,7 @@ static void MX_TIM11_Init(void)
   htim11.Instance = TIM11;
   htim11.Init.Prescaler = 8400;
   htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim11.Init.Period = 50000;
+  htim11.Init.Period = keep_alive_period;
   htim11.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim11) != HAL_OK)
