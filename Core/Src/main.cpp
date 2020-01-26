@@ -113,8 +113,10 @@ void spi_tx_complete(SPI_HandleTypeDef *hspi){
 
 void timer11_period_elapsed(TIM_HandleTypeDef *htim){
 	tim11_count ++;
-	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) spi_tx_test, 17);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
 	sprintf(spi_tx_test,"Hello Mello %03d\r\n",spi_tx_count);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) spi_tx_test, 17);
 	printf("Host Keeping alive.. %d\r\n",tim11_count);
 }
 
@@ -191,6 +193,7 @@ int main(void)
 
   HAL_TIM_Base_Start_IT(&htim11);
   HAL_TIM_Base_Start_IT(&htim10);
+
 
 
   /* USER CODE END 2 */
