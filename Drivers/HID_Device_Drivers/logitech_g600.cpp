@@ -61,6 +61,15 @@ USBH_StatusTypeDef Logitech_G600_Mouse_Driver::process_hid_report_keyboard (uint
 	PrintHexBuf(buff, len, DEBUG_MSG);
 	if(buff[0] == 0x80){
 		input_state.buttons = buff[1] | (buff[2] << 8) | (buff[3] << 16);
+
+		//this is kind of a hack to reset the counters for position
+		//under the assumption that by the time we receive a keyboard report
+		//most likely all the location data would already have been transferred
+
+		input_state.dx = 0;
+		input_state.dy = 0;
+		input_state.dz = 0;
+
 		return USBH_OK;
 	}
 	return USBH_NOT_SUPPORTED;
