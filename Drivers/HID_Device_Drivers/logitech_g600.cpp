@@ -10,8 +10,6 @@
 #include "logitech_g600.hpp"
 #include "msgs.h"
 
-
-
 #define KEYBOARD_INTERFACE 1
 #define MOUSE_INTERFACE 0
 
@@ -25,32 +23,32 @@ Logitech_G600_Mouse_Driver::Logitech_G600_Mouse_Driver(): MMO_Mouse_HID_Driver(
 		(uint8_t) KEYBOARD_INTERFACE,
 		(uint8_t) MOUSE_INTERFACE)
 {
-	verbose_msg("Constructing Logitech G600 Driver Object\r\n");
+	info_msg("Constructing Logitech G600 Driver Object\r\n");
 }
 
 Logitech_G600_Mouse_Driver::~Logitech_G600_Mouse_Driver(){};
 
 USBH_StatusTypeDef Logitech_G600_Mouse_Driver::hid_handle_init(HID_HandleTypeDef *hid_handle){
 	hid_handle->report_buffer = (uint8_t*) malloc(hid_handle->length);
-	verbose_msg("Logitech G600 Mouse Initialized.\r\n");
+	info_msg("Logitech G600 Mouse Initialized.\r\n");
 	return USBH_OK;
 }
 
 USBH_StatusTypeDef Logitech_G600_Mouse_Driver::process_hid_report_descriptor_mouse(uint8_t *buff, uint8_t len){
-	verbose_msg("Mouse received report descriptor: %d bytes\r\n", len);
-	PrintHexBuf(buff, len);
+	info_msg("Mouse received report descriptor: %d bytes\r\n", len);
+	PrintHexBuf(buff, len, VERBOSE_MSG);
 	return USBH_OK;
 }
 
 USBH_StatusTypeDef Logitech_G600_Mouse_Driver::process_hid_report_descriptor_keyboard(uint8_t *buff, uint8_t len){
-	verbose_msg("Keyboard received report descriptor: %d bytes\r\n", len);
-	PrintHexBuf(buff, len);
+	info_msg("Keyboard received report descriptor: %d bytes\r\n", len);
+	PrintHexBuf(buff, len, VERBOSE_MSG);
 	return USBH_OK;
 }
 
 USBH_StatusTypeDef Logitech_G600_Mouse_Driver::process_hid_report_mouse (uint8_t *buff, uint8_t len){
 	verbose_msg("Mouse received report: %d bytes\r\n", len);
-	PrintHexBuf(buff, len);
+	PrintHexBuf(buff, len, DEBUG_MSG);
 
 	input_state.dx = buff[2] | (buff[3] << 8);
 	input_state.dy = buff[4] | (buff[5] << 8);
@@ -60,7 +58,7 @@ USBH_StatusTypeDef Logitech_G600_Mouse_Driver::process_hid_report_mouse (uint8_t
 
 USBH_StatusTypeDef Logitech_G600_Mouse_Driver::process_hid_report_keyboard (uint8_t *buff, uint8_t len){
 	verbose_msg("Keyboard received report: %d bytes\r\n", len);
-	PrintHexBuf(buff, len);
+	PrintHexBuf(buff, len, DEBUG_MSG);
 	if(buff[0] == 0x80){
 		input_state.buttons = buff[1] | (buff[2] << 8) | (buff[3] << 16);
 		return USBH_OK;

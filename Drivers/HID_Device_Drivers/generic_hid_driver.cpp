@@ -7,9 +7,8 @@
 
 #include <generic_hid_driver.hpp>
 #include <vector>
-//#include <functional>
+#include "msgs.h"
 
-extern uint8_t PrintHexBuf(uint8_t *buff, uint8_t len);
 
 Generic_HID_Driver::Generic_HID_Driver(){};
 

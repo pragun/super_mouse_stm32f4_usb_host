@@ -94,11 +94,8 @@ int tim11_count = 0;
 int tim4_count = 0;
 int tim10_count = 0;
 int uart_tx_count = 0;
-int usb_event_num = 0;
-int mouse_event_num = 0;
-int keyboard_event_num = 0;
 
-int log_filter_level = 1;
+int log_filter_level = 3;
 // 5: Silent
 // 4: Error: Only ERROR Messages
 // 3: INFO Mode: Info Messages
@@ -108,7 +105,6 @@ int log_filter_level = 1;
 
 #define USB_CDC_TX_BUF_SIZE 512
 
-int tx_count = 0;
 uint8_t spi_tx_count = 0;
 char* tx_buf = 0;
 char spi_tx_test[] = "Hello Mello  !!\r\n";
@@ -119,54 +115,19 @@ CircularBuffer<USB_CDC_TX_BUF_SIZE> uart2_tx_buf;
 
 void spi_tx_complete(SPI_HandleTypeDef *hspi){
 	spi_tx_count ++;
-	//printf("SPI TX Complete:%d\r\n",spi_tx_count);
-}
-
-void do_spi_tx2(){
-	sprintf(spi_tx_test,"Hello Mello %03d\r\n",spi_tx_count);
-
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-	asm("nop;");
-	asm("nop;");
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-
-	/*for(int p=0; p<2000; p++){
-		asm("nop;");
-	}*/
-
-	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) spi_tx_test, 17);
-}
-
-void do_spi_tx(){
-	sprintf(spi_tx_test,"Hello%03d\r\n ",spi_tx_count);
-
-	/*
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-	asm("nop;");
-	asm("nop;");
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
-	*/
-
-	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) spi_tx_test, 9);
+	debug_msg("SPI TX Complete:%d\r\n",spi_tx_count);
 }
 
 
 void MMO_Mouse_Driver_New_State_Callback(const MMO_Mouse_State_TypeDef &mmo_mouse_state)
 {
   verbose_msg("New MMO Mouse State\r\n");
-  PrintHexBuf((uint8_t*) &mmo_mouse_state, sizeof(mmo_mouse_state));
-
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-  asm("nop;");
-  asm("nop;");
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+  PrintHexBuf((uint8_t*) &mmo_mouse_state, sizeof(mmo_mouse_state),VERBOSE_MSG);
   HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) &mmo_mouse_state, 9);
-
 }
 
 void timer4_period_elapsed(TIM_HandleTypeDef *htim){
 	tim4_count ++;
-	do_spi_tx();
 }
 
 void timer11_period_elapsed(TIM_HandleTypeDef *htim){
@@ -176,11 +137,11 @@ void timer11_period_elapsed(TIM_HandleTypeDef *htim){
 
 void timer10_period_elapsed(TIM_HandleTypeDef *htim){
 	tim10_count ++;
+	uint8_t tx_count = 0;
 	if ((uart2_tx_buf.length_of_ongoing_transmission() == 0) && (uart2_tx_buf.length_of_queue() > 0)){
 		std::tie (tx_buf, tx_count) = uart2_tx_buf.longest_possible_send();
 		HAL_UART_Transmit_DMA(&huart2,(uint8_t*) tx_buf, tx_count);
 	}
-
 }
 
 void uart_transfer_completed(UART_HandleTypeDef *huart){
@@ -200,15 +161,19 @@ int _write(int file, char *ptr, int len)
 }
 
 //extern "C" uint8_t PrintHexBuf(uint8_t *buff, uint8_t len);
-uint8_t PrintHexBuf(uint8_t *buff, uint8_t len){
-	for(uint8_t i = 0; i<len; i++){
-		debug_msg("%02X ",buff[i]);
-		if ((i+1)%8 == 0){
-			debug_msg("\r\n");
+uint8_t PrintHexBuf(uint8_t *buff, uint8_t len, uint8_t level){
+	if(log_filter_level <= level){
+		for(uint8_t i = 0; i<len; i++){
+			debug_msg("%02X ",buff[i]);
+			if ((i+1)%8 == 0){
+				debug_msg("\r\n");
+			}
 		}
+		debug_msg("\r\n");
+		return len;
+	}else{
+		return 0;
 	}
-	debug_msg("\r\n");
-	return 0;
 }
 
 int main(void)
@@ -254,7 +219,6 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim11);
   HAL_TIM_Base_Start_IT(&htim10);
  //HAL_TIM_Base_Start_IT(&htim4);
-
 
 
   /* USER CODE END 2 */
