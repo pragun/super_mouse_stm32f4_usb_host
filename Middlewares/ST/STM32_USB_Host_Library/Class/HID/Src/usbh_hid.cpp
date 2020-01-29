@@ -255,27 +255,6 @@ static USBH_StatusTypeDef USBH_HID_InterfaceInitHelper(USBH_HandleTypeDef *phost
 		HID_Handle->supports_set_protocol = 1;
 	}
 
-	/*
-	if(phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bInterfaceProtocol == HID_KEYBRD_BOOT_CODE)
-	{
-		USBH_UsrLog ("KeyBoard device found!");
-		HAL_Delay(50);
-		//HID_Handle->Init =  USBH_HID_KeybdInit;
-		//HID_Handle->Callback = KeyboardCallback;
-	}
-	else if(phost->device.CfgDesc.Itf_Desc[phost->device.current_interface].bInterfaceProtocol  == HID_MOUSE_BOOT_CODE)
-	{
-		USBH_UsrLog ("Mouse device found!");
-		HAL_Delay(50);
-		//HID_Handle->Init =  USBH_HID_MouseInit;
-		//HID_Handle->Callback = MouseCallback;
-	}
-	else
-	{
-		USBH_UsrLog ("Protocol not supported.");
-		return USBH_FAIL;
-	} */
-
 
 	HID_Handle->state     = HID_INIT;
 	HID_Handle->ctl_state = HID_REQ_INIT;

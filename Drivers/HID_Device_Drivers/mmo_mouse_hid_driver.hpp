@@ -12,17 +12,19 @@
 #include "usbh_hid.hpp"
 #include "hid_device_driver.hpp"
 
+#pragma pack(1)
 typedef struct
 {
 	int16_t dx;
 	int16_t dy;
-	int16_t dz;
+	int8_t dz;
 	uint32_t buttons;
 }
 MMO_Mouse_State_TypeDef;
 
 class MMO_Mouse_HID_Driver : public HID_Device_Driver{
 	public:
+	MMO_Mouse_State_TypeDef input_state;
 	std::vector<uint8_t> hid_interface_list();
 	virtual USBH_StatusTypeDef prepare_hid_handle(uint8_t interface, HID_HandleTypeDef *hid_handle);
 	virtual USBH_StatusTypeDef process_hid_report(HID_HandleTypeDef *hid_handle, uint8_t *buf, uint8_t len);
@@ -37,7 +39,6 @@ class MMO_Mouse_HID_Driver : public HID_Device_Driver{
 
 
 	private:
-	MMO_Mouse_State_TypeDef input_state;
 
 	uint8_t mouse_interface;
 	uint8_t keyboard_interface;

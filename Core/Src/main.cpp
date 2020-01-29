@@ -24,6 +24,8 @@
 #include "usbh_def.h"
 #include <cstdio>
 #include "circular_buffer.hpp"
+#include "msgs.h"
+#include "mmo_mouse_hid_driver.hpp"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -89,31 +91,38 @@ void MX_USB_HOST_Process(void);
   */
 
 int tim11_count = 0;
+int tim4_count = 0;
 int tim10_count = 0;
 int uart_tx_count = 0;
 int usb_event_num = 0;
 int mouse_event_num = 0;
 int keyboard_event_num = 0;
 
+int log_filter_level = 1;
+// 5: Silent
+// 4: Error: Only ERROR Messages
+// 3: INFO Mode: Info Messages
+// 2: Verbose: Detailed Messages
+// 1: Debug: All messages, including hex
+
+
 #define USB_CDC_TX_BUF_SIZE 512
 
 int tx_count = 0;
 uint8_t spi_tx_count = 0;
 char* tx_buf = 0;
-char spi_tx_test[] = "Hello Mello !!\r\n";
+char spi_tx_test[] = "Hello Mello  !!\r\n";
 
-const uint16_t keep_alive_period = 20'000; //0.1milliseconds
+const uint16_t keep_alive_period = 50'000; //0.1milliseconds
 
-CircularBuffer<USB_CDC_TX_BUF_SIZE> uart_tx_buffer;
+CircularBuffer<USB_CDC_TX_BUF_SIZE> uart2_tx_buf;
 
 void spi_tx_complete(SPI_HandleTypeDef *hspi){
 	spi_tx_count ++;
-	printf("SPI TX Complete:%d\r\n",spi_tx_count);
+	//printf("SPI TX Complete:%d\r\n",spi_tx_count);
 }
 
-void timer11_period_elapsed(TIM_HandleTypeDef *htim){
-	tim11_count ++;
-
+void do_spi_tx2(){
 	sprintf(spi_tx_test,"Hello Mello %03d\r\n",spi_tx_count);
 
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
@@ -121,39 +130,84 @@ void timer11_period_elapsed(TIM_HandleTypeDef *htim){
 	asm("nop;");
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
 
+	/*for(int p=0; p<2000; p++){
+		asm("nop;");
+	}*/
+
 	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) spi_tx_test, 17);
-	printf("Host Keeping alive.. %d\r\n",tim11_count);
+}
+
+void do_spi_tx(){
+	sprintf(spi_tx_test,"Hello%03d\r\n ",spi_tx_count);
+
+	/*
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+	asm("nop;");
+	asm("nop;");
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+	*/
+
+	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) spi_tx_test, 9);
+}
+
+
+void MMO_Mouse_Driver_New_State_Callback(const MMO_Mouse_State_TypeDef &mmo_mouse_state)
+{
+  verbose_msg("New MMO Mouse State\r\n");
+  PrintHexBuf((uint8_t*) &mmo_mouse_state, sizeof(mmo_mouse_state));
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+  asm("nop;");
+  asm("nop;");
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+  HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) &mmo_mouse_state, 9);
+
+}
+
+void timer4_period_elapsed(TIM_HandleTypeDef *htim){
+	tim4_count ++;
+	do_spi_tx();
+}
+
+void timer11_period_elapsed(TIM_HandleTypeDef *htim){
+	tim11_count ++;
+	info_msg("Host alive msg.. %d\r\n",tim11_count);
 }
 
 void timer10_period_elapsed(TIM_HandleTypeDef *htim){
 	tim10_count ++;
-	if ((uart_tx_buffer.length_of_ongoing_transmission() == 0) && (uart_tx_buffer.length_of_queue() > 0)){
-		std::tie (tx_buf, tx_count) = uart_tx_buffer.longest_possible_send();
+	if ((uart2_tx_buf.length_of_ongoing_transmission() == 0) && (uart2_tx_buf.length_of_queue() > 0)){
+		std::tie (tx_buf, tx_count) = uart2_tx_buf.longest_possible_send();
 		HAL_UART_Transmit_DMA(&huart2,(uint8_t*) tx_buf, tx_count);
 	}
+
 }
 
 void uart_transfer_completed(UART_HandleTypeDef *huart){
-	uart_tx_buffer.send_complete();
+	uart2_tx_buf.send_complete();
 	uart_tx_count ++;
 }
+
 
 extern "C" int _write(int file, char *ptr, int len);
 int _write(int file, char *ptr, int len)
 {
-	uart_tx_buffer.write_to_queue(ptr, len);
-	return len;
+	if(log_filter_level <= file){
+		uart2_tx_buf.write_to_queue(ptr, len);
+		return len;
+	}
+	return 0;
 }
 
 //extern "C" uint8_t PrintHexBuf(uint8_t *buff, uint8_t len);
 uint8_t PrintHexBuf(uint8_t *buff, uint8_t len){
 	for(uint8_t i = 0; i<len; i++){
-		printf("%02X ",buff[i]);
+		debug_msg("%02X ",buff[i]);
 		if ((i+1)%8 == 0){
-			printf("\r\n");
+			debug_msg("\r\n");
 		}
 	}
-	printf("\r\n");
+	debug_msg("\r\n");
 	return 0;
 }
 
@@ -193,11 +247,13 @@ int main(void)
 
   HAL_TIM_RegisterCallback(&htim11,HAL_TIM_PERIOD_ELAPSED_CB_ID, timer11_period_elapsed);
   HAL_TIM_RegisterCallback(&htim10,HAL_TIM_PERIOD_ELAPSED_CB_ID, timer10_period_elapsed);
+  HAL_TIM_RegisterCallback(&htim4, HAL_TIM_PERIOD_ELAPSED_CB_ID, timer4_period_elapsed);
   HAL_UART_RegisterCallback(&huart2, HAL_UART_TX_COMPLETE_CB_ID, uart_transfer_completed);
   HAL_SPI_RegisterCallback(&hspi1, HAL_SPI_TX_COMPLETE_CB_ID, spi_tx_complete);
 
   HAL_TIM_Base_Start_IT(&htim11);
   HAL_TIM_Base_Start_IT(&htim10);
+ //HAL_TIM_Base_Start_IT(&htim4);
 
 
 
@@ -205,6 +261,8 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  info_msg("Host Initialized...\r\n");
+
   while (1)
   {
     /* USER CODE END WHILE */
@@ -280,7 +338,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -361,9 +419,9 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 8400;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 0;
+  htim4.Init.Period = 10;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
   {
     Error_Handler();
@@ -463,7 +521,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
+  huart2.Init.BaudRate = 1000000;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;

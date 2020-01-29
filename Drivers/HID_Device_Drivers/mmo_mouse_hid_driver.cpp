@@ -1,6 +1,15 @@
 #include <mmo_mouse_hid_driver.hpp>
 #include <vector>
-//#include <functional>
+#include "msgs.h"
+
+__weak void MMO_Mouse_Driver_New_State_Callback(const MMO_Mouse_State_TypeDef &mmo_mouse_state)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(mmo_mouse_state);
+  /* NOTE: This function should not be modified, when the callback is needed,
+           the MMO_Mouse_Driver_New_State_Callback should be implemented in the user file
+   */
+}
 
 MMO_Mouse_HID_Driver::MMO_Mouse_HID_Driver(	uint8_t keyboard_iface,
 											uint8_t mouse_iface)
@@ -41,13 +50,17 @@ USBH_StatusTypeDef MMO_Mouse_HID_Driver::prepare_hid_handle(uint8_t interface, H
 
 USBH_StatusTypeDef MMO_Mouse_HID_Driver::process_hid_report(HID_HandleTypeDef *hid_handle, uint8_t *buf, uint8_t len)
 {
+	USBH_StatusTypeDef ret_val = USBH_FAIL;
 	if (hid_handle->interface == mouse_interface){
-		return process_hid_report_mouse(buf,len);
+		ret_val = process_hid_report_mouse(buf,len);
 	}
 	if (hid_handle->interface == keyboard_interface){
-		return process_hid_report_keyboard(buf,len);
+		ret_val =  process_hid_report_keyboard(buf,len);
 	}
-	return USBH_FAIL;
+	if (ret_val == USBH_OK){
+		MMO_Mouse_Driver_New_State_Callback(input_state);
+	}
+	return ret_val;
 }
 
 USBH_StatusTypeDef MMO_Mouse_HID_Driver::process_hid_report_descriptor(HID_HandleTypeDef *hid_handle, uint8_t *buf, uint8_t len)
