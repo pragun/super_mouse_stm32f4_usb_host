@@ -24,7 +24,7 @@
 #include "usbh_def.h"
 #include <cstdio>
 #include "circular_buffer.hpp"
-#include "msgs.h"
+//#include "msgs.h"
 #include "mmo_mouse_hid_driver.hpp"
 
 /* Private includes ----------------------------------------------------------*/
@@ -115,14 +115,14 @@ CircularBuffer<USB_CDC_TX_BUF_SIZE> uart2_tx_buf;
 
 void spi_tx_complete(SPI_HandleTypeDef *hspi){
 	spi_tx_count ++;
-	debug_msg("SPI TX Complete:%d\r\n",spi_tx_count);
+	//debug_msg("SPI TX Complete:%d\r\n",spi_tx_count);
 }
 
 
 void MMO_Mouse_Driver_New_State_Callback(const MMO_Mouse_State_TypeDef &mmo_mouse_state)
 {
-  verbose_msg("New MMO Mouse State\r\n");
-  PrintHexBuf((uint8_t*) &mmo_mouse_state, sizeof(mmo_mouse_state),VERBOSE_MSG);
+  //verbose_msg("New MMO Mouse State\r\n");
+  //PrintHexBuf((uint8_t*) &mmo_mouse_state, sizeof(mmo_mouse_state),VERBOSE_MSG);
   HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) &mmo_mouse_state, 9);
 }
 
@@ -132,7 +132,7 @@ void timer4_period_elapsed(TIM_HandleTypeDef *htim){
 
 void timer11_period_elapsed(TIM_HandleTypeDef *htim){
 	tim11_count ++;
-	info_msg("Host alive msg.. %d\r\n",tim11_count);
+	//info_msg("Host alive msg.. %d\r\n",tim11_count);
 }
 
 void timer10_period_elapsed(TIM_HandleTypeDef *htim){
@@ -164,12 +164,12 @@ int _write(int file, char *ptr, int len)
 uint8_t PrintHexBuf(uint8_t *buff, uint8_t len, uint8_t level){
 	if(log_filter_level <= level){
 		for(uint8_t i = 0; i<len; i++){
-			debug_msg("%02X ",buff[i]);
+			//debug_msg("%02X ",buff[i]);
 			if ((i+1)%8 == 0){
-				debug_msg("\r\n");
+				//debug_msg("\r\n");
 			}
 		}
-		debug_msg("\r\n");
+		//debug_msg("\r\n");
 		return len;
 	}else{
 		return 0;
@@ -225,7 +225,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  info_msg("Host Initialized...\r\n");
+  //info_msg("Host Initialized...\r\n");
 
   while (1)
   {

@@ -7,7 +7,7 @@
 
 #include <generic_hid_driver.hpp>
 #include <vector>
-#include "msgs.h"
+//#include "msgs.h"
 
 
 Generic_HID_Driver::Generic_HID_Driver(){};
@@ -36,7 +36,7 @@ USBH_StatusTypeDef Generic_HID_Driver::hid_handle_init(HID_HandleTypeDef *hid_ha
 
 USBH_StatusTypeDef Generic_HID_Driver::process_hid_report(HID_HandleTypeDef *hid_handle, uint8_t *buf, uint8_t len){
 	printf("HID Interface:%d Received report: %d bytes\r\n", hid_handle->interface, len);
-	PrintHexBuf(buf, len);
+	//PrintHexBuf(buf, len);
 	return USBH_OK;
 }
 
@@ -44,7 +44,7 @@ USBH_StatusTypeDef Generic_HID_Driver::process_hid_report_descriptor(HID_HandleT
 	hid_handle->report_descriptor_buffer = (uint8_t*) malloc(len);
 	memcpy(hid_handle->report_descriptor_buffer, buf, len);
 	printf("HID Interface:%d Received report descriptor: %d bytes\r\n", hid_handle->interface, len);
-	PrintHexBuf(buf, len);
+	//PrintHexBuf(buf, len);
 	return USBH_OK;
 }
 

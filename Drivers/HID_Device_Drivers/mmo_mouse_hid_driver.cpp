@@ -1,6 +1,6 @@
 #include <mmo_mouse_hid_driver.hpp>
 #include <vector>
-#include "msgs.h"
+//#include "msgs.h"
 
 __weak void MMO_Mouse_Driver_New_State_Callback(const MMO_Mouse_State_TypeDef &mmo_mouse_state)
 {
