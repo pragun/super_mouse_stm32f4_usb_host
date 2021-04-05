@@ -2,7 +2,7 @@
  * Title: Circular Buffer
  * Author: Pragun Goyal, December 31, 2019
  * Description: A simple circular buffer implementation specifically tailored to be used with DMA UART transmission
- * License:
+ * License: MIT License
  */
 
 
